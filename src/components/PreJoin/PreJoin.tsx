@@ -1,10 +1,16 @@
 // import { useState } from "react";
 
-import { useCallback } from "react";
+import { useCallback, Dispatch, SetStateAction } from "react";
 
-export default function PreJoin(props) {
-  //   const [isModerator, setIsModerator] = useState(false);
+interface PreJoinProps {
+  roomName: string;
+  name: string;
+  setName: Dispatch<SetStateAction<string>>;
+  setRoomName: Dispatch<SetStateAction<string>>;
+  onJoin: () => Promise<void>;
+}
 
+export default function PreJoin(props: PreJoinProps) {
   const handleJoin = useCallback(async () => {
     if (props.name.trim()) {
       await props.onJoin();

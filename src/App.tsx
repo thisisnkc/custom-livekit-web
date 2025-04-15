@@ -92,9 +92,19 @@ export default function App() {
 
   return (
     <RoomContext.Provider value={room}>
-      <div data-lk-theme="default" style={{ height: "100vh" }}>
-        <MyVideoConference />
-        <RoomAudioRenderer />
+      <div
+        data-lk-theme="default"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ flex: 1, overflow: "hidden" }}>
+          <MyVideoConference />
+          <RoomAudioRenderer />
+        </div>
         <CustomControlBar roomName={roomName} />
       </div>
     </RoomContext.Provider>
@@ -111,10 +121,7 @@ function MyVideoConference() {
   );
 
   return (
-    <GridLayout
-      tracks={tracks}
-      style={{ height: "calc(100vh - 60px)" }} // Adjust based on your control bar height
-    >
+    <GridLayout tracks={tracks} style={{ height: "calc(100vh - 60px)" }}>
       <ParticipantTile />
     </GridLayout>
   );

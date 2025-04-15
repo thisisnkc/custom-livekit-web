@@ -1,7 +1,11 @@
 import { useLocalParticipant, RoomContext } from "@livekit/components-react";
 import { useContext, useState } from "react";
 
-export default function CustomControlBar(props) {
+interface CustomControlBarProps {
+  roomName: string;
+}
+
+export default function CustomControlBar(props: CustomControlBarProps) {
   const room = useContext(RoomContext);
   const { localParticipant } = useLocalParticipant();
 
@@ -87,7 +91,9 @@ export default function CustomControlBar(props) {
   };
 
   const leaveRoom = () => {
-    room.disconnect();
+    if (room) {
+      room.disconnect();
+    }
     window.location.reload(); // or route to home page
   };
 
