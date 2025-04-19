@@ -4,12 +4,15 @@ import {
   RoomAudioRenderer,
   useTracks,
   RoomContext,
+  TrackRefContext,
 } from "@livekit/components-react";
-import { Room, Track } from "livekit-client";
+import { Room, Track, createLocalVideoTrack } from "livekit-client";
 import "@livekit/components-styles";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import CustomControlBar from "./components/Controllbar/Controllbar";
 import PreJoin from "./components/PreJoin/PreJoin";
+import SingleTileWithMenu from "./components/ParticipantTile";
+import MyVideoConference from "./components/ParticipantTile";
 
 const serverUrl = "https://livekit.t.kocharsoft.com";
 
@@ -61,11 +64,50 @@ export default function App() {
     // } else console.log("cannot generate token from server");
   };
 
+  const getAllVideoDevices = async () => {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    return devices.filter((device) => device.kind === "videoinput");
+  };
+
+  const publishAllCameras = useCallback(async (room: Room) => {
+    // Step 1: Ask for permissions
+    try {
+      await navigator.mediaDevices.getUserMedia({ video: true });
+    } catch (err) {
+      console.error("Camera permissions denied:", err);
+      return;
+    }
+
+    const cameras = await getAllVideoDevices();
+    console.log("Available cameras:", cameras);
+
+    for (const camera of cameras) {
+      try {
+        const track = await createLocalVideoTrack({
+          deviceId: { exact: camera.deviceId },
+        });
+
+        await room.localParticipant.publishTrack(track, {
+          name: `camera-${camera.deviceId}`,
+          source: Track.Source.Unknown,
+        });
+
+        console.log("Published camera:", camera.label);
+      } catch (error) {
+        console.error(
+          `Could not create or publish video track for device ${camera.label}:`,
+          error
+        );
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (!joined) return;
 
     const connect = async () => {
       await room.connect(serverUrl, token);
+      await publishAllCameras(room);
 
       room.localParticipant.setMicrophoneEnabled(true);
       room.localParticipant.setCameraEnabled(true);
@@ -76,7 +118,7 @@ export default function App() {
     return () => {
       room.disconnect();
     };
-  }, [joined, token, room]);
+  }, [joined, token, room, publishAllCameras]);
 
   if (!joined) {
     return (
@@ -108,21 +150,5 @@ export default function App() {
         <CustomControlBar roomName={roomName} />
       </div>
     </RoomContext.Provider>
-  );
-}
-
-function MyVideoConference() {
-  const tracks = useTracks(
-    [
-      { source: Track.Source.Camera, withPlaceholder: true },
-      { source: Track.Source.ScreenShare, withPlaceholder: false },
-    ],
-    { onlySubscribed: false }
-  );
-
-  return (
-    <GridLayout tracks={tracks} style={{ height: "calc(100vh - 60px)" }}>
-      <ParticipantTile />
-    </GridLayout>
   );
 }
